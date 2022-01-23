@@ -1,7 +1,7 @@
 import { renderToString } from "react-dom/server";
 import type { EntryContext } from "remix";
 import { createCookie, RemixServer } from "remix";
-import { getLanguage, locales } from "~/helpers/i18n";
+import { getRecommendedLocale, locales } from "~/helpers/i18n";
 
 export default async function handleRequest(
 	request: Request,
@@ -10,15 +10,29 @@ export default async function handleRequest(
 	remixContext: EntryContext
 ) {
 	const url = new URL(request.url);
-	if (!locales.some((locale) => url.pathname.startsWith(`/${locale}/`))) {
-		const cookie = createCookie("locale");
+	const cookie = createCookie("pabio_v20220123_locale", {
+		path: "/",
+		httpOnly: true,
+		sameSite: "strict",
+	});
+
+	if (
+		!Object.entries(locales)
+			.map(([countryCode, languages]) =>
+				Object.keys(languages).map(
+					(languageCode) => `${languageCode}-${countryCode}`
+				)
+			)
+			.flat()
+			.some((locale) => url.pathname.startsWith(`/${locale}/`))
+	) {
 		const data = await cookie.parse(request.headers.get("Cookie"));
-		const language = data ?? getLanguage(request.headers);
-		return new Response(`/${language}-ch${url.pathname}`, {
+		const locale = data ?? getRecommendedLocale(request.headers);
+		return new Response(`/${locale}${url.pathname}`, {
 			status: 302,
 			headers: {
-				Location: `/${language}-ch${url.pathname}`,
-				"Set-Cookie": await cookie.serialize(language),
+				Location: `/${locale}${url.pathname}`,
+				"Set-Cookie": await cookie.serialize(locale),
 			},
 		});
 	}
@@ -28,6 +42,10 @@ export default async function handleRequest(
 	);
 
 	responseHeaders.set("Content-Type", "text/html");
+	responseHeaders.set(
+		"Set-Cookie",
+		await cookie.serialize(url.pathname.split("/")[1])
+	);
 
 	return new Response("<!DOCTYPE html>" + markup, {
 		status: responseStatusCode,

@@ -1,6 +1,6 @@
 import { useLoaderData } from "remix";
 import type { LoaderFunction } from "remix";
-import { getTranslations } from "~/helpers/i18n";
+import { loadTranslations } from "~/helpers/i18n";
 
 type I18nKeys = "hello";
 const i18nKeys: I18nKeys[] = ["hello"];
@@ -12,7 +12,7 @@ type LoaderData = {
 
 export let loader: LoaderFunction = (args): LoaderData => {
 	return {
-		i18n: getTranslations<I18nKeys>(args.params.locale, i18nKeys),
+		i18n: loadTranslations<I18nKeys>(args.params.locale, i18nKeys),
 		products: [{ name: "Pants" }, { name: "Jacket" }],
 	};
 };

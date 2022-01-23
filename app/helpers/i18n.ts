@@ -1,37 +1,59 @@
 import { pick } from "accept-language-parser";
-
-type LanguageCode = "en" | "fr" | "de";
-const languages: LanguageCode[] = ["en", "fr", "de"];
-
-export const locales: string[] = languages
-	.map((language) => `${language}-ch`)
-	.flat();
-
-const i18n: Record<LanguageCode, Record<string, string>> = {
-	en: { hello: "hello", world: "world" },
-	de: { hello: "hallo", world: "world" },
-	fr: { hello: "bonjour", world: "world" },
-};
+import i18nData from "~/data/i18n.json";
 
 /**
- * Get localized keys for a given language
- * @param language - ISO 639‑1 language code
- * @param keys - Keys required
+ * All available locales per recommendedCountryCode in the following format:
+ * { [recommendedCountryCode code]: { [language code]: name } }
  */
-export const getTranslations = <T extends string>(
-	language: string | undefined,
+export const locales: Record<string, Record<string, string>> = {
+	de: { en: "English (Germany)", de: "Deutsche (Deutschland)" },
+	ch: {
+		en: "English (Switzerland)",
+		fr: "Français (Suisse)",
+		de: "Deutsche (Schweiz)",
+	},
+};
+
+const _i18n: Record<string, Record<string, string>> = i18nData;
+const _defaultFallbackLanguage = "en";
+const _computedLanguageCodes = Array.from(
+	new Set<string>(
+		Object.values(locales)
+			.map((languages) => Object.keys(languages))
+			.flat()
+	)
+);
+
+/**
+ * Get localized keys for a given locale
+ * @param locale - Locale code
+ * @param keys - Keys required
+ * @returns Object containing localized terms
+ */
+export const loadTranslations = <T extends string>(
+	locale: string | undefined,
 	keys: string[]
 ): Record<T, string> => {
+	const languageCode = locale?.split("-")[0] ?? _defaultFallbackLanguage;
 	const result: Record<string, string> = {};
 	keys.forEach(
 		(key) =>
 			(result[key] =
-				i18n[language?.split("-")?.[0] as LanguageCode][key] ?? key)
+				_i18n[languageCode][key] ?? _i18n[_defaultFallbackLanguage][key] ?? key)
 	);
 	return result;
 };
 
-export const getLanguage = (headers: Headers): string => {
-	const locale = pick(languages, headers.get("accept-language") ?? "");
-	return locale ?? languages[0];
+/**
+ * Get the recommended locale for a request using its `Accept-Language` header and IP address
+ * @param headers - Request headers
+ * @returns Locale, e.g., "en-ch"
+ */
+export const getRecommendedLocale = (headers: Headers): string => {
+	const locale = pick(
+		_computedLanguageCodes,
+		headers.get("accept-language") ?? ""
+	);
+	const recommendedCountryCode = "ch";
+	return `${locale ?? _defaultFallbackLanguage}-${recommendedCountryCode}`;
 };

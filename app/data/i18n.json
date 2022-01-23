@@ -1,0 +1,20 @@
+{
+  "en": {
+    "hello": "hello",
+    "world": "world",
+    "country_de": "Germany",
+    "country_ch": "Switzerland"
+  },
+  "de": {
+    "hello": "hallo",
+    "world": "world",
+    "country_de": "Deutschland",
+    "country_ch": "Schweiz"
+  },
+  "fr": {
+    "hello": "bonjour",
+    "world": "world",
+    "country_de": "Allemagne",
+    "country_ch": "Suisse"
+  }
+}

@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import type { MetaFunction } from "remix";
 import {
 	Links,
 	LiveReload,
@@ -7,10 +9,9 @@ import {
 	Scripts,
 	ScrollRestoration,
 	useLoaderData,
+	useMatches,
 } from "remix";
-import type { MetaFunction } from "remix";
-import { getLanguage } from "./helpers/i18n";
-import { useEffect, useState } from "react";
+import { getRecommendedLocale, locales } from "~/helpers/i18n";
 
 export const meta: MetaFunction = () => {
 	return { title: "New Remix App" };
@@ -19,11 +20,12 @@ export const meta: MetaFunction = () => {
 type LoaderData = { recommendedLocale?: string; recommendedLocaleUrl: string };
 
 export let loader: LoaderFunction = (args): LoaderData => {
-	const recommendedLocale = getLanguage(args.request.headers) + "-ch";
+	const recommendedLocale = getRecommendedLocale(args.request.headers);
+	const url = new URL(args.request.url);
 	return {
 		recommendedLocale:
 			args.params.locale === recommendedLocale ? undefined : recommendedLocale,
-		recommendedLocaleUrl: args.request.url.replace(
+		recommendedLocaleUrl: url.pathname.replace(
 			args.params.locale ?? "",
 			recommendedLocale
 		),
@@ -34,6 +36,9 @@ export default function App() {
 	const { recommendedLocale, recommendedLocaleUrl } =
 		useLoaderData<LoaderData>();
 	const [showLocale, setShowLocale] = useState<boolean>(false);
+	const matches = useMatches();
+	const currentLocale = matches[matches.length - 1]?.params.locale ?? "";
+	const currentPathname = matches[matches.length - 1]?.pathname ?? "";
 
 	useEffect(() => {
 		if (!window.sessionStorage.getItem("locale-recommendation-hidden"))
@@ -47,14 +52,20 @@ export default function App() {
 				<meta name="viewport" content="width=device-width,initial-scale=1" />
 				<Meta />
 				<Links />
+				<style
+					dangerouslySetInnerHTML={{
+						__html: `
+body {
+	font-family: system-ui, sans-serif;
+	line-height: 1.4;
+	margin: 0;
+}
+a { color: blue; }
+				`,
+					}}
+				/>
 			</head>
-			<body
-				style={{
-					fontFamily: "system-ui, sans-serif",
-					lineHeight: "1.4",
-					margin: 0,
-				}}
-			>
+			<body>
 				{recommendedLocale && (
 					<div
 						style={{
@@ -67,11 +78,31 @@ export default function App() {
 					>
 						<p style={{ margin: 0 }}>
 							<span style={{ marginRight: "0.5rem" }}>
-								This site is also available in {recommendedLocale}.
+								{`This site is also available in ${
+									locales[recommendedLocale.split("-")[1]][
+										recommendedLocale.split("-")[0]
+									]
+								}.`}
 							</span>
-							<a href={recommendedLocaleUrl}>
-								View in {recommendedLocale} &rarr;
-							</a>
+							<a href={recommendedLocaleUrl}>{`Switch to ${
+								recommendedLocale.split("-")[0] === currentLocale.split("-")[0]
+									? locales[recommendedLocale.split("-")[1]][
+											recommendedLocale.split("-")[0]
+									  ]
+											.split("(")[1]
+											.split(")")[0]
+											.trim()
+									: recommendedLocale.split("-")[1] ===
+									  currentLocale.split("-")[1]
+									? locales[recommendedLocale.split("-")[1]][
+											recommendedLocale.split("-")[0]
+									  ]
+											.split("(")[0]
+											.trim()
+									: locales[recommendedLocale.split("-")[1]][
+											recommendedLocale.split("-")[0]
+									  ]
+							} →`}</a>
 						</p>
 						<button
 							style={{ border: 0, padding: 0 }}
@@ -111,6 +142,43 @@ export default function App() {
 					</div>
 				)}
 				<Outlet />
+				<footer>
+					<p>© {new Date().getFullYear()}</p>
+					<nav style={{ display: "inline-flex", alignItems: "center" }}>
+						<h2 style={{ fontSize: "100%" }}>Change locale</h2>
+						{Object.entries(locales).map(([countryCode, languages]) => {
+							return Object.entries(languages).map(([languageCode, name]) => {
+								const locale = `${languageCode}-${countryCode}`;
+								const active = currentLocale === locale;
+								const href = currentPathname.replace(
+									`/${currentLocale}`,
+									`/${locale}`
+								);
+								return (
+									<a
+										style={{
+											marginLeft: "1rem",
+											fontWeight: active ? "bold" : "inherit",
+										}}
+										onClick={(event) => {
+											event.preventDefault();
+											window.sessionStorage.setItem(
+												"locale-recommendation-hidden",
+												"1"
+											);
+											window.location.href = href;
+										}}
+										key={locale}
+										href={href}
+										aria-current={active ? "page" : "false"}
+									>
+										{name}
+									</a>
+								);
+							});
+						})}
+					</nav>
+				</footer>
 				<ScrollRestoration />
 				<Scripts />
 				{process.env.NODE_ENV === "development" && <LiveReload />}
