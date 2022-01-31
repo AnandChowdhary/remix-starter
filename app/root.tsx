@@ -30,8 +30,11 @@ type LoaderData = {
   recommendedLocaleUrl: string;
 };
 
-export const loader: LoaderFunction = (args): LoaderData => {
-  const recommendedLocale = getRecommendedLocale(args.request.headers);
+export const loader: LoaderFunction = async (args): Promise<LoaderData> => {
+  const recommendedLocale = await getRecommendedLocale(
+    args.request,
+    args.params.locale
+  );
   const url = new URL(args.request.url);
   return {
     i18n: loadTranslations(

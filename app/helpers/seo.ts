@@ -7,7 +7,7 @@ import type { ExtendLoaderData } from "~/helpers/loader";
  * @returns Object for `HtmlMetaDescriptor`
  */
 export const generateMetaTags: MetaFunction = ({ data, parentsData }) => {
-  console.log({ parentsData: JSON.stringify(parentsData) });
+  // console.log({ parentsData: JSON.stringify(parentsData) });
   const { meta }: ExtendLoaderData<string, Record<string, any>> = data;
   return {
     title: [meta.title].filter((i) => i != null).join(" · "),
