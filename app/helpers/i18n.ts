@@ -32,7 +32,7 @@ const _computedLanguageCodes = Array.from(
  */
 export const loadTranslations = <T extends string>(
   locale: string | undefined,
-  keys: string[]
+  keys: readonly string[]
 ): Record<T, string> => {
   const languageCode = locale?.split("-")[0] ?? _defaultFallbackLanguage;
   const result: Record<string, string> = {};
