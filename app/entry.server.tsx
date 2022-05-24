@@ -10,26 +10,17 @@ export default async function handleRequest(
   remixContext: EntryContext
 ) {
   const url = new URL(request.url);
-  const cookie = createCookie("pabio_v20220123_locale", {
+  const cookie = createCookie("pabio_v20220524_locale", {
     path: "/",
     httpOnly: true,
     sameSite: "strict",
   });
 
-  if (
-    !Object.entries(locales)
-      .map(([countryCode, languages]) =>
-        Object.keys(languages).map(
-          (languageCode) => `${languageCode}-${countryCode}`
-        )
-      )
-      .flat()
-      .some((locale) => url.pathname.startsWith(`/${locale}/`))
-  ) {
+  if (!locales.some((locale) => url.pathname.startsWith(`/${locale.slug}/`))) {
     const data = await cookie.parse(request.headers.get("Cookie"));
     const locale = data ?? (await getRecommendedLocale(request));
     return new Response(`/${locale}${url.pathname}`, {
-      status: 302,
+      status: 302, // 302 Found
       headers: {
         Location: `/${locale}${url.pathname}`,
         "Set-Cookie": await cookie.serialize(locale),
