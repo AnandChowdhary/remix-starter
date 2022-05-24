@@ -1,23 +1,26 @@
 {
   "en": {
+    "change_language": "Change language & region",
+    "submit": "Submit",
+
     "hello": "hello",
     "world": "world",
-    "products": "Products",
-    "country_de": "Germany",
-    "country_ch": "Switzerland"
+    "products": "Products"
   },
   "de": {
+    "change_language": "Sprache und Region ändern",
+    "submit": "Einreichen",
+
     "hello": "hallo",
     "world": "world",
-    "products": "Itemes",
-    "country_de": "Deutschland",
-    "country_ch": "Schweiz"
+    "products": "Itemes"
   },
   "fr": {
+    "change_language": "Changer de langue et de région",
+    "submit": "Soumettre",
+
     "hello": "bonjour",
     "world": "world",
-    "products": "Les productes",
-    "country_de": "Allemagne",
-    "country_ch": "Suisse"
+    "products": "Les productes"
   }
 }

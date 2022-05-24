@@ -17,35 +17,50 @@ import {
 import {
   getRecommendedLocale,
   loadTranslations,
+  localeHasCountries,
   locales,
+  routesWithoutLocales,
+  t,
 } from "~/helpers/i18n";
+import type { Locale } from "~/helpers/i18n";
+import { ExtendLoaderData } from "~/helpers/loader";
+import { LocaleSelector } from "~/components/LocaleSelector";
 
 export const meta: MetaFunction = () => {
   return { title: "Pabio" };
 };
 
-type LoaderData = {
-  i18n: Record<string, string>;
-  recommendedLocale?: string;
-  recommendedLocaleUrl: string;
-};
-
+const i18nKeys = ["change_language", "submit"] as const;
+type I18nKeys = typeof i18nKeys[number];
+type LoaderData = ExtendLoaderData<
+  I18nKeys,
+  {
+    showLocaleRecommendation: boolean;
+    recommendedLocale: Locale;
+    recommendedLocaleUrl: string;
+  }
+>;
 export const loader: LoaderFunction = async (args): Promise<LoaderData> => {
-  const recommendedLocale = await getRecommendedLocale(
+  const recommendedLocaleSlug = await getRecommendedLocale(
     args.request,
     args.params.locale
   );
+  const recommendedLocale = locales.find(
+    (locale) => locale.slug === recommendedLocaleSlug
+  );
+  if (!recommendedLocale) throw new Error("Recommend locale not found");
+
   const url = new URL(args.request.url);
   return {
-    i18n: loadTranslations(
-      args.params.locale,
-      Object.keys(locales).map((countryCode) => `country_${countryCode}`)
-    ),
-    recommendedLocale:
-      args.params.locale === recommendedLocale ? undefined : recommendedLocale,
+    meta: { title: "Pabio" },
+    i18n: loadTranslations<I18nKeys>(args.params.locale, i18nKeys),
+    showLocaleRecommendation: args.params.locale
+      ? recommendedLocale.slug !== args.params.locale
+      : false,
+    recommendedLocale,
     recommendedLocaleUrl: url.pathname.replace(
       args.params.locale ?? "",
-      recommendedLocale
+      recommendedLocale.slug
     ),
   };
 };
@@ -81,8 +96,12 @@ a { color: blue; }
 );
 
 export default function App() {
-  const { i18n, recommendedLocale, recommendedLocaleUrl } =
-    useLoaderData<LoaderData>();
+  const {
+    i18n,
+    showLocaleRecommendation,
+    recommendedLocale,
+    recommendedLocaleUrl,
+  } = useLoaderData<LoaderData>();
   const [showLocale, setShowLocale] = useState<boolean>(false);
   const matches = useMatches();
   const currentLocale = matches[matches.length - 1]?.params.locale ?? "";
@@ -95,7 +114,7 @@ export default function App() {
 
   return (
     <BaseTemplate>
-      {recommendedLocale && (
+      {showLocaleRecommendation && (
         <div
           style={{
             backgroundColor: "#eee",
@@ -107,31 +126,22 @@ export default function App() {
         >
           <p style={{ margin: 0 }}>
             <span style={{ marginRight: "0.5rem" }}>
-              {`This site is also available in ${
-                locales[recommendedLocale.split("-")[1]][
-                  recommendedLocale.split("-")[0]
-                ]
-              }.`}
+              {t(recommendedLocale.languageRecommendationI18n.body, {
+                language: recommendedLocale.label,
+              })}
             </span>
-            <a href={recommendedLocaleUrl}>{`Switch to ${
-              recommendedLocale.split("-")[0] === currentLocale.split("-")[0]
-                ? locales[recommendedLocale.split("-")[1]][
-                    recommendedLocale.split("-")[0]
-                  ]
-                    .split("(")[1]
-                    .split(")")[0]
-                    .trim()
-                : recommendedLocale.split("-")[1] ===
-                  currentLocale.split("-")[1]
-                ? locales[recommendedLocale.split("-")[1]][
-                    recommendedLocale.split("-")[0]
-                  ]
-                    .split("(")[0]
-                    .trim()
-                : locales[recommendedLocale.split("-")[1]][
-                    recommendedLocale.split("-")[0]
-                  ]
-            } →`}</a>
+            <a href={recommendedLocaleUrl}>{`${t(
+              recommendedLocale.languageRecommendationI18n.cta,
+              {
+                language:
+                  localeHasCountries &&
+                  recommendedLocale.slug.split("-")[0] ===
+                    currentLocale.split("-")[0]
+                    ? // If language is the same, but country is different
+                      recommendedLocale.countryLabel ?? recommendedLocale.label
+                    : recommendedLocale.label,
+              }
+            )} →`}</a>
           </p>
           <button
             style={{ border: 0, padding: 0 }}
@@ -172,47 +182,21 @@ export default function App() {
       )}
       <Outlet />
       <footer>
-        <nav style={{ backgroundColor: "#eee", padding: "1.5rem" }}>
-          <h2 style={{ fontSize: "100%", margin: 0 }}>
-            {"Change language & region"}
-          </h2>
-          {Object.entries(locales).map(([countryCode, languages]) => (
-            <div key={countryCode}>
-              <h3 style={{ fontSize: "100%" }}>
-                {i18n[`country_${countryCode}`]}
-              </h3>
-              {Object.entries(languages).map(([languageCode, name]) => {
-                const locale = `${languageCode}-${countryCode}`;
-                const active = currentLocale === locale;
-                const href = currentPathname.replace(
-                  `/${currentLocale}`,
-                  `/${locale}`
-                );
-                return (
-                  <a
-                    style={{
-                      marginRight: "1rem",
-                      fontWeight: active ? "bold" : "inherit",
-                    }}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      window.sessionStorage.setItem(
-                        "locale-recommendation-hidden",
-                        "1"
-                      );
-                      window.location.href = href;
-                    }}
-                    key={locale}
-                    href={href}
-                    aria-current={active ? "page" : "false"}
-                  >
-                    {name}
-                  </a>
-                );
-              })}
-            </div>
-          ))}
-        </nav>
+        {!routesWithoutLocales.includes(currentPathname) && (
+          <LocaleSelector
+            i18n={{
+              change_language: i18n.change_language,
+              submit: i18n.submit,
+            }}
+          />
+        )}
+        <details style={{ marginTop: "1rem" }}>
+          <summary>Your computed locale</summary>
+          <ul>
+            <li>Current locale: {currentLocale}</li>
+            <li>Recommended locale: {recommendedLocale.slug}</li>
+          </ul>
+        </details>
         <p>© {new Date().getFullYear()}</p>
       </footer>
     </BaseTemplate>

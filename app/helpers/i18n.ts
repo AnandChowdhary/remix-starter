@@ -1,28 +1,36 @@
 import { pick } from "accept-language-parser";
 import i18nData from "~/data/i18n.json";
+import localesData from "~/data/locales.json";
+import routesData from "~/data/routes-without-locales.json";
 
 const FALLBACK_LOCALE = "en-ch";
 
+export type Locale = {
+  slug: string;
+  label: string;
+  countryLabel?: string;
+  languageRecommendationI18n: { body: string; cta: string };
+};
+
 /** * All available locales */
-export const locales: { slug: string; label: string }[] = [
-  { slug: "en-de", label: "English (Germany)" },
-  { slug: "de-de", label: "Deutsche (Deutschland)" },
-  { slug: "en-ch", label: "English (Switzerland)" },
-  { slug: "fr-ch", label: "Français (Suisse)" },
-  { slug: "de-ch", label: "Deutsche (Schweiz)" },
-];
+export const locales: Locale[] = localesData;
 
 // Properly types i18n object
 const _i18n: Record<string, Record<string, string>> = i18nData;
 // If list of locales is not like ["en", "de"] but like ["en-ch", "de-ch"], i.e., has country code
 const _localeSlugs: string[] = locales.map((locale) => locale.slug);
-const _localeHasCountries = _localeSlugs.every((slug) =>
-  /[a-z]{2,3}-[a-zA-Z]{2}/.test(slug)
-);
 // In case of locales with countries, language part of the fallback locale
 const _fallbackLocaleLanguage = FALLBACK_LOCALE.split("-")[0];
 // In case of locales with countries, country part of the fallback locale
 const _fallbackLocaleCountry = FALLBACK_LOCALE.split("-")[1];
+
+/** * Routes without locales */
+export const routesWithoutLocales: string[] = routesData;
+
+/** Whether locales have country suffixes */
+export const localeHasCountries = _localeSlugs.every((slug): boolean =>
+  /[a-z]{2,3}-[a-zA-Z]{2}/.test(slug)
+);
 
 /**
  * Get localized keys for a given locale
@@ -91,7 +99,7 @@ export const getRecommendedLocale = async (
   const { headers } = request;
   // Find your preferred language from our list of supported languages
   const locale = pick(_localeSlugs, headers.get("accept-language") ?? "");
-  if (!_localeHasCountries) return locale ?? FALLBACK_LOCALE;
+  if (!localeHasCountries) return locale ?? FALLBACK_LOCALE;
 
   const language = locale?.split?.("-")?.[0];
   let recommendedCountryCode =
@@ -117,4 +125,22 @@ export const getRecommendedLocale = async (
       console.error(error);
     }
   return `${language ?? _fallbackLocaleLanguage}-${recommendedCountryCode}`;
+};
+
+/**
+ * Replace variables in a translation using the {{var}} syntax
+ * @param translation - Translated value
+ * @param replacers - Object with replacers
+ * @returns Translated value with replaced variables
+ */
+export const t = (
+  translation: string,
+  replacers: Record<string, string | number>
+): string => {
+  if (!translation) return "";
+  Object.entries(replacers).forEach(
+    ([key, value]) =>
+      (translation = translation.replace(`{{${key}}}`, value.toString()))
+  );
+  return translation;
 };

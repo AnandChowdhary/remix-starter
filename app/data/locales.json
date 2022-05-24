@@ -1,0 +1,47 @@
+[
+  {
+    "slug": "en-de",
+    "label": "English",
+    "countryLabel": "Germany",
+    "languageRecommendationI18n": {
+      "body": "This site is also available in {{language}}.",
+      "cta": "Switch to {{language}}"
+    }
+  },
+  {
+    "slug": "de-de",
+    "label": "Deutsche",
+    "countryLabel": "Deutschland",
+    "languageRecommendationI18n": {
+      "body": "Diese Seite ist auch in {{language}} verfügbar.",
+      "cta": "Wechseln Sie zu {{language}}"
+    }
+  },
+  {
+    "slug": "en-ch",
+    "label": "English",
+    "countryLabel": "Switzerland",
+    "languageRecommendationI18n": {
+      "body": "This site is also available in {{language}}.",
+      "cta": "Switch to {{language}}"
+    }
+  },
+  {
+    "slug": "fr-ch",
+    "label": "Français",
+    "countryLabel": "Suisse",
+    "languageRecommendationI18n": {
+      "body": "Ce site est aussi disponible en {{language}}.",
+      "cta": "Passer à {{language}}"
+    }
+  },
+  {
+    "slug": "de-ch",
+    "label": "Deutsche",
+    "countryLabel": "Schweiz",
+    "languageRecommendationI18n": {
+      "body": "Diese Seite ist auch in {{language}} verfügbar.",
+      "cta": "Wechseln Sie zu {{language}}"
+    }
+  }
+]
