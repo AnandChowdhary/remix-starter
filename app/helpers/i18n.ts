@@ -32,6 +32,26 @@ export const localeHasCountries = _localeSlugs.every((slug): boolean =>
   /[a-z]{2,3}-[a-zA-Z]{2}/.test(slug)
 );
 
+/** All available locales with countries */
+export const localesWithCountries:
+  | { countryCode: string; countryLabel?: string; locales: Locale[] }[]
+  | undefined = localeHasCountries ? [] : undefined;
+if (localesWithCountries) {
+  const countryCodes = new Set<string>(
+    locales.map((locale) => locale.slug.split("-")[1])
+  );
+  for (const countryCode of countryCodes)
+    localesWithCountries.push({
+      countryCode,
+      countryLabel: locales.find(
+        (locale) => locale.slug.split("-")[1] === countryCode
+      )?.countryLabel,
+      locales: locales.filter(
+        (locale) => locale.slug.split("-")[1] === countryCode
+      ),
+    });
+}
+
 /**
  * Get localized keys for a given locale
  * @param locale - Locale code, e.g., "en-ch" or "en"

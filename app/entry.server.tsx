@@ -1,5 +1,5 @@
 import { renderToString } from "react-dom/server";
-import type { EntryContext } from "remix";
+import { EntryContext, redirect } from "remix";
 import { RemixServer } from "remix";
 import {
   getRecommendedLocale,
@@ -15,18 +15,18 @@ export default async function handleRequest(
   remixContext: EntryContext
 ) {
   const url = new URL(request.url);
+
+  // If URL doesn't include a trailing slash, add it
+  if (!url.pathname.endsWith("/")) return redirect(`${url.pathname}/`);
+
   if (
     !routesWithoutLocales.includes(url.pathname) &&
     !locales.some((locale) => url.pathname.startsWith(`/${locale.slug}/`))
   ) {
     const data = await localeCookie.parse(request.headers.get("Cookie"));
     const locale = data ?? (await getRecommendedLocale(request));
-    return new Response(`/${locale}${url.pathname}`, {
-      status: 302, // 302 Found
-      headers: {
-        Location: `/${locale}${url.pathname}`,
-        "Set-Cookie": await localeCookie.serialize(locale),
-      },
+    return redirect(`/${locale}${url.pathname}`, {
+      headers: { "Set-Cookie": await localeCookie.serialize(locale) },
     });
   }
 
